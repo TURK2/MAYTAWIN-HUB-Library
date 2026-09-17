@@ -1,5 +1,5 @@
--- Maytawin UI Library v2.1
--- Soft white / light-blue theme, centered on open.
+-- Maytawin UI Library v2.2
+-- Soft white / light-blue theme, properly centered, watermark + new float button.
 
 local Maytawin = {}
 
@@ -13,26 +13,26 @@ local localPlayer = playersService.LocalPlayer
 
 -- Constants.
 local UI_FOLDER_NAME = "MaytawinUI"
-local BASE_W, BASE_H = 640, 440
+local BASE_W, BASE_H = 620, 430
 local SIDEBAR_WIDTH = 190
-local TOPBAR_HEIGHT = 52
+local TOPBAR_HEIGHT = 56
 local DRAG_THRESHOLD = 4
 
--- Palette: soft white / light blue, no neon.
+-- Palette: soft white / light blue.
 local COLOR = {
-    bg        = Color3.fromRGB(245, 248, 253),
-    bg2       = Color3.fromRGB(236, 242, 250),
-    bg3       = Color3.fromRGB(226, 235, 246),
-    stroke    = Color3.fromRGB(200, 215, 232),
-    strokeHi  = Color3.fromRGB(170, 195, 222),
-    text      = Color3.fromRGB(45, 60, 82),
-    textDim   = Color3.fromRGB(110, 130, 155),
-    textMuted = Color3.fromRGB(150, 168, 190),
-    accent    = Color3.fromRGB(120, 170, 235),
-    accentSoft= Color3.fromRGB(180, 210, 245),
-    accentDark= Color3.fromRGB(100, 145, 205),
-    danger    = Color3.fromRGB(220, 120, 130),
-    ok        = Color3.fromRGB(120, 195, 150),
+    bg        = Color3.fromRGB(246, 249, 253),
+    bg2       = Color3.fromRGB(238, 244, 251),
+    bg3       = Color3.fromRGB(228, 237, 248),
+    stroke    = Color3.fromRGB(206, 219, 235),
+    strokeHi  = Color3.fromRGB(176, 199, 224),
+    text      = Color3.fromRGB(44, 60, 84),
+    textDim   = Color3.fromRGB(112, 132, 158),
+    textMuted = Color3.fromRGB(158, 175, 196),
+    accent    = Color3.fromRGB(122, 172, 236),
+    accentSoft= Color3.fromRGB(184, 212, 245),
+    accentDark= Color3.fromRGB(98, 146, 210),
+    danger    = Color3.fromRGB(220, 122, 132),
+    watermark = Color3.fromRGB(206, 219, 235),
 }
 
 -- State.
@@ -133,17 +133,14 @@ local function dragify(frame, handle)
     end)
 end
 
-local function applyScale()
-    if not uiScale then return end
+-- Compute a scale that always keeps the window fitting on screen.
+local function computeScale()
     local cam = workspace.CurrentCamera
     local vp = cam and cam.ViewportSize or Vector2.new(1920, 1080)
-    local s = math.min(vp.X / 1920, vp.Y / 1080)
-    if vp.X < 700 then
-        s = math.max(0.72, s * 1.05)
-    else
-        s = math.clamp(s, 0.8, 1.15)
-    end
-    tween(uiScale, { Scale = s }, 0.2)
+    local sx = vp.X / (BASE_W + 60)
+    local sy = vp.Y / (BASE_H + 60)
+    local s = math.min(sx, sy)
+    return math.clamp(s, 0.55, 1.15)
 end
 
 -- ============================================================
@@ -168,16 +165,16 @@ function Maytawin:CreateWindow(props)
         Parent = coreGui,
     })
 
+    -- Full-screen parent (does NOT get scaled; keeps children centered).
     local root = create("Frame", {
         Name = "Root",
         Size = UDim2.fromScale(1, 1),
+        Position = UDim2.fromScale(0, 0),
         BackgroundTransparency = 1,
         Parent = gui,
     })
 
-    uiScale = create("UIScale", { Scale = 1, Parent = root })
-
-    -- Main frame.
+    -- Main frame (scaled, always centered via AnchorPoint).
     mainFrame = create("Frame", {
         Name = "MainFrame",
         Size = UDim2.fromOffset(BASE_W, BASE_H),
@@ -188,10 +185,16 @@ function Maytawin:CreateWindow(props)
         ClipsDescendants = true,
         Parent = root,
     })
-    addCorner(mainFrame, 14)
+    addCorner(mainFrame, 18)
     addStroke(mainFrame, COLOR.stroke, 1)
 
-    -- Top accent line (subtle, not glowing).
+    -- UIScale placed on mainFrame itself so it scales from its center.
+    uiScale = create("UIScale", {
+        Scale = computeScale(),
+        Parent = mainFrame,
+    })
+
+    -- Top accent line.
     create("Frame", {
         Size = UDim2.new(1, 0, 0, 3),
         Position = UDim2.new(0, 0, 0, 0),
@@ -211,41 +214,61 @@ function Maytawin:CreateWindow(props)
         Parent = mainFrame,
     })
 
-    -- Brand dot (soft).
+    -- Watermark "ByMaytawin" behind the title (faded).
+    create("TextLabel", {
+        Name = "Watermark",
+        Size = UDim2.new(0, 200, 1, 0),
+        Position = UDim2.new(0, 60, 0, 4),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBlack,
+        Text = "ByMaytawin",
+        TextColor3 = COLOR.watermark,
+        TextTransparency = 0.35,
+        TextSize = 24,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Center,
+        ZIndex = 0,
+        Parent = topBar,
+    })
+
+    -- Brand dot.
     local brandDot = create("Frame", {
         Size = UDim2.fromOffset(10, 10),
         Position = UDim2.new(0, 18, 0.5, -14),
         BackgroundColor3 = COLOR.accent,
         BorderSizePixel = 0,
+        ZIndex = 2,
         Parent = topBar,
     })
     addCorner(brandDot, 5)
 
     create("TextLabel", {
         Size = UDim2.new(0, 220, 0, 16),
-        Position = UDim2.new(0, 36, 0, 12),
+        Position = UDim2.new(0, 36, 0, 13),
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamBold,
         Text = windowName,
         TextColor3 = COLOR.text,
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 2,
         Parent = topBar,
     })
 
     create("TextLabel", {
         Size = UDim2.new(0, 220, 0, 12),
-        Position = UDim2.new(0, 36, 0, 30),
+        Position = UDim2.new(0, 36, 0, 32),
         BackgroundTransparency = 1,
         Font = Enum.Font.Gotham,
         Text = subtitle,
         TextColor3 = COLOR.textMuted,
         TextSize = 10,
         TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 2,
         Parent = topBar,
     })
 
-    -- Window controls.
+    -- Controls.
     local function makeCtrlBtn(text, xOff)
         local btn = create("TextButton", {
             Size = UDim2.fromOffset(28, 28),
@@ -257,9 +280,10 @@ function Maytawin:CreateWindow(props)
             TextColor3 = COLOR.textDim,
             TextSize = 12,
             AutoButtonColor = false,
+            ZIndex = 3,
             Parent = topBar,
         })
-        addCorner(btn, 7)
+        addCorner(btn, 9)
         addStroke(btn, COLOR.stroke, 1)
         btn.MouseEnter:Connect(function()
             tween(btn, { BackgroundColor3 = COLOR.accentSoft, TextColor3 = COLOR.text }, 0.15)
@@ -312,45 +336,61 @@ function Maytawin:CreateWindow(props)
         Parent = body,
     })
 
-    -- Floating toggle button (soft white/blue, no pulse).
+    -- ============================================================
+    -- Floating toggle button (nicer design).
+    -- ============================================================
     floatBtn = create("TextButton", {
         Name = "FloatBtn",
-        Size = UDim2.fromOffset(50, 50),
-        Position = UDim2.new(0, 24, 0.5, -25),
+        Size = UDim2.fromOffset(54, 54),
+        Position = UDim2.new(0, 22, 0.5, -27),
         AnchorPoint = Vector2.new(0, 0.5),
-        BackgroundColor3 = COLOR.bg2,
+        BackgroundColor3 = COLOR.accent,
         BorderSizePixel = 0,
         Text = "",
         AutoButtonColor = false,
         Parent = root,
         ZIndex = 20,
     })
-    addCorner(floatBtn, 25)
-    addStroke(floatBtn, COLOR.strokeHi, 1.5)
+    addCorner(floatBtn, 27)
+    addStroke(floatBtn, Color3.fromRGB(255, 255, 255), 2, 0.3)
+
+    -- Inner highlight circle (gives depth without glow).
+    local innerRing = create("Frame", {
+        Size = UDim2.fromOffset(42, 42),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Parent = floatBtn,
+        ZIndex = 2,
+    })
+    addCorner(innerRing, 21)
+    addStroke(innerRing, Color3.fromRGB(255, 255, 255), 1, 0.6)
 
     local floatIcon = create("TextLabel", {
         Size = UDim2.fromScale(1, 1),
         BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold,
+        Font = Enum.Font.GothamBlack,
         Text = "M",
-        TextColor3 = COLOR.accent,
-        TextSize = 20,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 22,
+        ZIndex = 3,
         Parent = floatBtn,
     })
 
     floatBtn.MouseEnter:Connect(function()
-        tween(floatBtn, { Size = UDim2.fromOffset(56, 56), BackgroundColor3 = COLOR.accentSoft }, 0.18)
+        tween(floatBtn, { BackgroundColor3 = COLOR.accentDark }, 0.15)
     end)
     floatBtn.MouseLeave:Connect(function()
-        tween(floatBtn, { Size = UDim2.fromOffset(50, 50), BackgroundColor3 = COLOR.bg2 }, 0.18)
+        tween(floatBtn, { BackgroundColor3 = COLOR.accent }, 0.15)
     end)
 
     dragify(floatBtn)
 
     -- Center helper.
     local function centerWindow()
-        mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
         mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+        mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     end
 
     -- Toggle logic.
@@ -363,15 +403,13 @@ function Maytawin:CreateWindow(props)
             mainFrame.Size = UDim2.fromOffset(BASE_W * 0.9, BASE_H * 0.9)
             tween(mainFrame, { Size = UDim2.fromOffset(BASE_W, BASE_H) }, 0.25, Enum.EasingStyle.Quart)
             floatIcon.Text = "✕"
-            floatIcon.TextColor3 = COLOR.danger
         else
             floatIcon.Text = "M"
-            floatIcon.TextColor3 = COLOR.accent
             mainFrame.Visible = false
         end
     end
 
-    -- Float button tap detection.
+    -- Float button tap detection (avoids toggling on drag).
     local tapBegan
     floatBtn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -413,15 +451,17 @@ function Maytawin:CreateWindow(props)
         end
     end))
 
-    table.insert(connections, workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(applyScale))
-    applyScale()
+    -- Responsive scaling.
+    local function applyScale()
+        if not uiScale then return end
+        tween(uiScale, { Scale = computeScale() }, 0.2)
+    end
 
-    task.spawn(function()
-        while gui and gui.Parent do
-            task.wait(1)
-            applyScale()
-        end
-    end)
+    table.insert(connections, workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+        applyScale()
+        centerWindow()
+    end))
+    applyScale()
 
     -- ========================================================
     -- WINDOW API
@@ -445,7 +485,7 @@ function Maytawin:CreateWindow(props)
             LayoutOrder = #tabButtons + 1,
             Parent = sidebarFrame or tabContent,
         })
-        addCorner(tabBtn, 8)
+        addCorner(tabBtn, 10)
 
         local indicator = create("Frame", {
             Size = UDim2.new(0, 3, 0.55, 0),
@@ -486,7 +526,7 @@ function Maytawin:CreateWindow(props)
         if sidebarFrame then
             local layout = sidebarFrame:FindFirstChildOfClass("UIListLayout")
             if not layout then
-                layout = create("UIListLayout", {
+                create("UIListLayout", {
                     Padding = UDim.new(0, 4),
                     SortOrder = Enum.SortOrder.LayoutOrder,
                     Parent = sidebarFrame,
@@ -525,7 +565,7 @@ function Maytawin:CreateWindow(props)
                 LayoutOrder = elementCount,
                 Parent = tabFrame,
             })
-            addCorner(el, 8)
+            addCorner(el, 10)
             addStroke(el, COLOR.stroke, 1)
             if props then
                 for k, v in pairs(props) do
@@ -535,7 +575,6 @@ function Maytawin:CreateWindow(props)
             return el
         end
 
-        -- Toggle.
         function tab:CreateToggle(p)
             p = p or {}
             local name = p.name or "Toggle"
@@ -599,7 +638,6 @@ function Maytawin:CreateWindow(props)
             }
         end
 
-        -- Slider.
         function tab:CreateSlider(p)
             p = p or {}
             local name = p.name or "Slider"
@@ -716,7 +754,6 @@ function Maytawin:CreateWindow(props)
             }
         end
 
-        -- Button.
         function tab:CreateButton(p)
             p = p or {}
             local name = p.name or "Button"
@@ -847,7 +884,7 @@ function Maytawin:CreateWindow(props)
             Parent = root,
             ZIndex = 50,
         })
-        addCorner(wrap, 10)
+        addCorner(wrap, 12)
         addStroke(wrap, COLOR.strokeHi, 1)
 
         local accentBar = create("Frame", {
