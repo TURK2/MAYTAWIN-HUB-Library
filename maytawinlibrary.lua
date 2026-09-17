@@ -1,5 +1,5 @@
--- Maytawin UI Library v2.0
--- Modern, responsive, performance-first.
+-- Maytawin UI Library v2.1
+-- Soft white / light-blue theme, centered on open.
 
 local Maytawin = {}
 
@@ -18,21 +18,21 @@ local SIDEBAR_WIDTH = 190
 local TOPBAR_HEIGHT = 52
 local DRAG_THRESHOLD = 4
 
--- Palette.
+-- Palette: soft white / light blue, no neon.
 local COLOR = {
-    bg          = Color3.fromRGB(18, 18, 24),
-    bg2         = Color3.fromRGB(24, 24, 32),
-    bg3         = Color3.fromRGB(32, 32, 42),
-    stroke      = Color3.fromRGB(52, 52, 68),
-    strokeHi    = Color3.fromRGB(80, 90, 120),
-    text        = Color3.fromRGB(232, 232, 240),
-    textDim     = Color3.fromRGB(150, 150, 170),
-    textMuted   = Color3.fromRGB(105, 105, 125),
-    accent      = Color3.fromRGB(110, 150, 255),
-    accent2     = Color3.fromRGB(160, 110, 255),
-    accentDark  = Color3.fromRGB(70, 100, 190),
-    danger      = Color3.fromRGB(230, 90, 100),
-    ok          = Color3.fromRGB(90, 210, 140),
+    bg        = Color3.fromRGB(245, 248, 253),
+    bg2       = Color3.fromRGB(236, 242, 250),
+    bg3       = Color3.fromRGB(226, 235, 246),
+    stroke    = Color3.fromRGB(200, 215, 232),
+    strokeHi  = Color3.fromRGB(170, 195, 222),
+    text      = Color3.fromRGB(45, 60, 82),
+    textDim   = Color3.fromRGB(110, 130, 155),
+    textMuted = Color3.fromRGB(150, 168, 190),
+    accent    = Color3.fromRGB(120, 170, 235),
+    accentSoft= Color3.fromRGB(180, 210, 245),
+    accentDark= Color3.fromRGB(100, 145, 205),
+    danger    = Color3.fromRGB(220, 120, 130),
+    ok        = Color3.fromRGB(120, 195, 150),
 }
 
 -- State.
@@ -41,7 +41,6 @@ local gui, mainFrame, contentHolder, sidebarFrame
 local tabButtons = {}
 local tabs = {}
 local activeTab
-local collapsed
 local floatBtn
 local isOpen = true
 local uiScale
@@ -79,24 +78,6 @@ local function addStroke(parent, color, thickness, transparency)
         Color = color or COLOR.stroke,
         Thickness = thickness or 1,
         Transparency = transparency or 0,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Parent = parent,
-    })
-end
-
-local function addGradient(parent, c1, c2, rotation)
-    return create("UIGradient", {
-        Color = ColorSequence.new(c1, c2),
-        Rotation = rotation or 90,
-        Parent = parent,
-    })
-end
-
-local function addShadow(parent)
-    return create("UIStroke", {
-        Color = Color3.fromRGB(0, 0, 0),
-        Thickness = 1.5,
-        Transparency = 0.5,
         ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
         Parent = parent,
     })
@@ -152,14 +133,11 @@ local function dragify(frame, handle)
     end)
 end
 
--- Responsive scaling.
 local function applyScale()
     if not uiScale then return end
     local cam = workspace.CurrentCamera
     local vp = cam and cam.ViewportSize or Vector2.new(1920, 1080)
-    local sx = vp.X / 1920
-    local sy = vp.Y / 1080
-    local s = math.min(sx, sy)
+    local s = math.min(vp.X / 1920, vp.Y / 1080)
     if vp.X < 700 then
         s = math.max(0.72, s * 1.05)
     else
@@ -174,12 +152,11 @@ end
 
 function Maytawin:CreateWindow(props)
     props = props or {}
-    local windowName = props.name or props.Name or "Maytawin UI"
-    local subtitle = props.subtitle or props.Subtitle or "by Maytawin"
+    local windowName = props.name or "Maytawin UI"
+    local subtitle = props.subtitle or "by Maytawin"
     local sidebarLayout = props.sidebarLayout ~= false
-    local toggleKey = props.toggleKeybind or props.ToggleKeybind or Enum.KeyCode.RightShift
+    local toggleKey = props.toggleKeybind or Enum.KeyCode.RightShift
 
-    -- Cleanup.
     local old = coreGui:FindFirstChild(UI_FOLDER_NAME)
     if old then old:Destroy() end
 
@@ -191,7 +168,6 @@ function Maytawin:CreateWindow(props)
         Parent = coreGui,
     })
 
-    -- Root frame (fills screen, transparent; UI scaled inside).
     local root = create("Frame", {
         Name = "Root",
         Size = UDim2.fromScale(1, 1),
@@ -214,30 +190,28 @@ function Maytawin:CreateWindow(props)
     })
     addCorner(mainFrame, 14)
     addStroke(mainFrame, COLOR.stroke, 1)
-    addGradient(mainFrame, Color3.fromRGB(26, 26, 36), Color3.fromRGB(14, 14, 20), 90)
 
-    -- Accent line top.
-    local accentLine = create("Frame", {
-        Size = UDim2.new(1, 0, 0, 2),
+    -- Top accent line (subtle, not glowing).
+    create("Frame", {
+        Size = UDim2.new(1, 0, 0, 3),
         Position = UDim2.new(0, 0, 0, 0),
-        BackgroundColor3 = COLOR.accent,
+        BackgroundColor3 = COLOR.accentSoft,
         BorderSizePixel = 0,
         ZIndex = 2,
         Parent = mainFrame,
     })
-    addGradient(accentLine, COLOR.accent, COLOR.accent2, 0)
 
     -- Top bar.
     local topBar = create("Frame", {
         Name = "TopBar",
         Size = UDim2.new(1, 0, 0, TOPBAR_HEIGHT),
-        Position = UDim2.new(0, 0, 0, 2),
+        Position = UDim2.new(0, 0, 0, 3),
         BackgroundColor3 = COLOR.bg2,
         BorderSizePixel = 0,
         Parent = mainFrame,
     })
 
-    -- Brand dot.
+    -- Brand dot (soft).
     local brandDot = create("Frame", {
         Size = UDim2.fromOffset(10, 10),
         Position = UDim2.new(0, 18, 0.5, -14),
@@ -246,10 +220,8 @@ function Maytawin:CreateWindow(props)
         Parent = topBar,
     })
     addCorner(brandDot, 5)
-    addGradient(brandDot, COLOR.accent, COLOR.accent2, 45)
 
     create("TextLabel", {
-        Name = "Title",
         Size = UDim2.new(0, 220, 0, 16),
         Position = UDim2.new(0, 36, 0, 12),
         BackgroundTransparency = 1,
@@ -262,7 +234,6 @@ function Maytawin:CreateWindow(props)
     })
 
     create("TextLabel", {
-        Name = "Subtitle",
         Size = UDim2.new(0, 220, 0, 12),
         Position = UDim2.new(0, 36, 0, 30),
         BackgroundTransparency = 1,
@@ -275,7 +246,7 @@ function Maytawin:CreateWindow(props)
     })
 
     -- Window controls.
-    local function makeCtrlBtn(text, xOff, hoverColor, clickColor)
+    local function makeCtrlBtn(text, xOff)
         local btn = create("TextButton", {
             Size = UDim2.fromOffset(28, 28),
             Position = UDim2.new(1, xOff, 0.5, -14),
@@ -289,36 +260,31 @@ function Maytawin:CreateWindow(props)
             Parent = topBar,
         })
         addCorner(btn, 7)
-        local stroke = addStroke(btn, COLOR.stroke, 1)
-
+        addStroke(btn, COLOR.stroke, 1)
         btn.MouseEnter:Connect(function()
-            tween(btn, { BackgroundColor3 = hoverColor or COLOR.strokeHi, TextColor3 = COLOR.text }, 0.15)
-            stroke.Transparency = 0.4
+            tween(btn, { BackgroundColor3 = COLOR.accentSoft, TextColor3 = COLOR.text }, 0.15)
         end)
         btn.MouseLeave:Connect(function()
             tween(btn, { BackgroundColor3 = COLOR.bg3, TextColor3 = COLOR.textDim }, 0.15)
-            stroke.Transparency = 0
         end)
         return btn
     end
 
-    local closeBtn = makeCtrlBtn("✕", -42, Color3.fromRGB(180, 70, 80))
-    local minBtn   = makeCtrlBtn("—", -76, Color3.fromRGB(80, 80, 100))
+    local closeBtn = makeCtrlBtn("✕", -42)
+    local minBtn   = makeCtrlBtn("—", -76)
 
     dragify(mainFrame, topBar)
 
     -- Body.
     local body = create("Frame", {
         Name = "Body",
-        Size = UDim2.new(1, 0, 1, -(TOPBAR_HEIGHT + 2)),
-        Position = UDim2.new(0, 0, 0, TOPBAR_HEIGHT + 2),
+        Size = UDim2.new(1, 0, 1, -(TOPBAR_HEIGHT + 3)),
+        Position = UDim2.new(0, 0, 0, TOPBAR_HEIGHT + 3),
         BackgroundTransparency = 1,
         Parent = mainFrame,
     })
-
     contentHolder = body
 
-    -- Sidebar.
     if sidebarLayout then
         sidebarFrame = create("Frame", {
             Name = "Sidebar",
@@ -346,7 +312,7 @@ function Maytawin:CreateWindow(props)
         Parent = body,
     })
 
-    -- Floating toggle button.
+    -- Floating toggle button (soft white/blue, no pulse).
     floatBtn = create("TextButton", {
         Name = "FloatBtn",
         Size = UDim2.fromOffset(50, 50),
@@ -360,8 +326,7 @@ function Maytawin:CreateWindow(props)
         ZIndex = 20,
     })
     addCorner(floatBtn, 25)
-    local floatStroke = addStroke(floatBtn, COLOR.accent, 1.5, 0.2)
-    addGradient(floatBtn, Color3.fromRGB(30, 30, 42), Color3.fromRGB(20, 20, 28), 90)
+    addStroke(floatBtn, COLOR.strokeHi, 1.5)
 
     local floatIcon = create("TextLabel", {
         Size = UDim2.fromScale(1, 1),
@@ -373,56 +338,40 @@ function Maytawin:CreateWindow(props)
         Parent = floatBtn,
     })
 
-    -- Fancy pulse ring.
-    local ring = create("Frame", {
-        Size = UDim2.fromOffset(50, 50),
-        Position = UDim2.fromScale(0.5, 0.5),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        Parent = floatBtn,
-        ZIndex = 0,
-    })
-    addCorner(ring, 25)
-    addStroke(ring, COLOR.accent, 2, 0.4)
-
-    local pulseConn = tweenService:Create(ring, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, -1, false), {
-        Size = UDim2.fromOffset(80, 80),
-        BackgroundTransparency = 1,
-    })
-    pulseConn:Play()
-    table.insert(connections, pulseConn)
-
     floatBtn.MouseEnter:Connect(function()
-        tween(floatBtn, { Size = UDim2.fromOffset(56, 56) }, 0.18)
-        floatStroke.Color = COLOR.accent2
+        tween(floatBtn, { Size = UDim2.fromOffset(56, 56), BackgroundColor3 = COLOR.accentSoft }, 0.18)
     end)
     floatBtn.MouseLeave:Connect(function()
-        tween(floatBtn, { Size = UDim2.fromOffset(50, 50) }, 0.18)
-        floatStroke.Color = COLOR.accent
+        tween(floatBtn, { Size = UDim2.fromOffset(50, 50), BackgroundColor3 = COLOR.bg2 }, 0.18)
     end)
 
     dragify(floatBtn)
+
+    -- Center helper.
+    local function centerWindow()
+        mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+        mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    end
 
     -- Toggle logic.
     local function setOpen(state)
         if isOpen == state then return end
         isOpen = state
         if state then
+            centerWindow()
             mainFrame.Visible = true
-            mainFrame.Size = UDim2.fromOffset(BASE_W * 0.85, BASE_H * 0.85)
-            tween(mainFrame, { Size = UDim2.fromOffset(BASE_W, BASE_H) }, 0.28, Enum.EasingStyle.Back)
+            mainFrame.Size = UDim2.fromOffset(BASE_W * 0.9, BASE_H * 0.9)
+            tween(mainFrame, { Size = UDim2.fromOffset(BASE_W, BASE_H) }, 0.25, Enum.EasingStyle.Quart)
             floatIcon.Text = "✕"
             floatIcon.TextColor3 = COLOR.danger
-            floatStroke.Color = COLOR.danger
         else
             floatIcon.Text = "M"
             floatIcon.TextColor3 = COLOR.accent
-            floatStroke.Color = COLOR.accent
             mainFrame.Visible = false
         end
     end
 
-    -- Avoid firing drag toggle: use a tap detector.
+    -- Float button tap detection.
     local tapBegan
     floatBtn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -434,8 +383,7 @@ function Maytawin:CreateWindow(props)
         if input.UserInputType == Enum.UserInputType.MouseButton1
             or input.UserInputType == Enum.UserInputType.Touch then
             if tapBegan then
-                local d = (input.Position - tapBegan).Magnitude
-                if d < DRAG_THRESHOLD then
+                if (input.Position - tapBegan).Magnitude < DRAG_THRESHOLD then
                     setOpen(not isOpen)
                 end
                 tapBegan = nil
@@ -448,17 +396,16 @@ function Maytawin:CreateWindow(props)
     end)
 
     minBtn.MouseButton1Click:Connect(function()
-        local collapsed = mainFrame.Size == UDim2.fromOffset(BASE_W, TOPBAR_HEIGHT + 6)
+        local collapsed = mainFrame.Size.Y.Offset <= TOPBAR_HEIGHT + 10
         if collapsed then
-            tween(mainFrame, { Size = UDim2.fromOffset(BASE_W, BASE_H) }, 0.3, Enum.EasingStyle.Quart)
             body.Visible = true
+            tween(mainFrame, { Size = UDim2.fromOffset(BASE_W, BASE_H) }, 0.28, Enum.EasingStyle.Quart)
         else
             body.Visible = false
-            tween(mainFrame, { Size = UDim2.fromOffset(BASE_W, TOPBAR_HEIGHT + 6) }, 0.3, Enum.EasingStyle.Quart)
+            tween(mainFrame, { Size = UDim2.fromOffset(BASE_W, TOPBAR_HEIGHT + 6) }, 0.28, Enum.EasingStyle.Quart)
         end
     end)
 
-    -- Keybind.
     table.insert(connections, userInputService.InputBegan:Connect(function(input, processed)
         if processed then return end
         if input.KeyCode == toggleKey then
@@ -466,11 +413,9 @@ function Maytawin:CreateWindow(props)
         end
     end))
 
-    -- Responsive.
     table.insert(connections, workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(applyScale))
     applyScale()
 
-    -- Re-apply on mobile keyboard etc.
     task.spawn(function()
         while gui and gui.Parent do
             task.wait(1)
@@ -486,7 +431,7 @@ function Maytawin:CreateWindow(props)
 
     function window:CreateTab(tabProps)
         tabProps = tabProps or {}
-        local tabName = tabProps.name or tabProps.Name or "Tab"
+        local tabName = tabProps.name or "Tab"
         local tabIcon = tabProps.icon or tabProps.Icon
 
         local tabBtn = create("TextButton", {
@@ -575,13 +520,13 @@ function Maytawin:CreateWindow(props)
             elementCount = elementCount + 1
             local el = create(class, {
                 Size = UDim2.new(1, 0, 0, height),
-                BackgroundColor3 = COLOR.bg3,
+                BackgroundColor3 = COLOR.bg2,
                 BorderSizePixel = 0,
                 LayoutOrder = elementCount,
                 Parent = tabFrame,
             })
             addCorner(el, 8)
-            addStroke(el, COLOR.stroke, 1, 0.3)
+            addStroke(el, COLOR.stroke, 1)
             if props then
                 for k, v in pairs(props) do
                     if k ~= "Parent" and k ~= "Size" then el[k] = v end
@@ -628,7 +573,7 @@ function Maytawin:CreateWindow(props)
                 Parent = track,
             })
             addCorner(knob, 9)
-            addShadow(knob)
+            addStroke(knob, COLOR.stroke, 1)
 
             local state = default
 
@@ -638,7 +583,7 @@ function Maytawin:CreateWindow(props)
                 tween(track, { BackgroundColor3 = state and COLOR.accent or COLOR.stroke }, 0.2)
                 tween(knob, {
                     Position = state and UDim2.new(1, -19, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
-                }, 0.2, Enum.EasingStyle.Back)
+                }, 0.2)
             end
 
             holder.InputBegan:Connect(function(input)
@@ -683,7 +628,7 @@ function Maytawin:CreateWindow(props)
                 BackgroundTransparency = 1,
                 Font = Enum.Font.GothamBold,
                 Text = tostring(default),
-                TextColor3 = COLOR.accent,
+                TextColor3 = COLOR.accentDark,
                 TextSize = 12,
                 TextXAlignment = Enum.TextXAlignment.Right,
                 Parent = holder,
@@ -705,7 +650,6 @@ function Maytawin:CreateWindow(props)
                 Parent = barBg,
             })
             addCorner(barFill, 3)
-            addGradient(barFill, COLOR.accent, COLOR.accent2, 0)
 
             local knob = create("Frame", {
                 Size = UDim2.fromOffset(16, 16),
@@ -716,7 +660,7 @@ function Maytawin:CreateWindow(props)
                 Parent = barBg,
             })
             addCorner(knob, 8)
-            addShadow(knob)
+            addStroke(knob, COLOR.strokeHi, 1)
 
             local value = default
             local draggingSlider = false
@@ -780,13 +724,9 @@ function Maytawin:CreateWindow(props)
 
             local holder = makeElement("TextButton", 40, {
                 Text = "",
-                BackgroundColor3 = COLOR.accentDark,
+                BackgroundColor3 = COLOR.accent,
                 AutoButtonColor = false,
             })
-            addGradient(holder, COLOR.accent, COLOR.accent2, 0)
-
-            local stroke = holder:FindFirstChildOfClass("UIStroke")
-            if stroke then stroke.Color = COLOR.accent stroke.Transparency = 0.5 end
 
             create("TextLabel", {
                 Size = UDim2.fromScale(1, 1),
@@ -799,12 +739,10 @@ function Maytawin:CreateWindow(props)
             })
 
             holder.MouseEnter:Connect(function()
-                tween(holder, { BackgroundColor3 = Color3.fromRGB(110, 130, 220) }, 0.15)
-                tween(holder, { Size = UDim2.new(1, 2, 0, 40) }, 0.12)
+                tween(holder, { BackgroundColor3 = COLOR.accentDark }, 0.15)
             end)
             holder.MouseLeave:Connect(function()
-                tween(holder, { BackgroundColor3 = COLOR.accentDark }, 0.15)
-                tween(holder, { Size = UDim2.new(1, 0, 0, 40) }, 0.12)
+                tween(holder, { BackgroundColor3 = COLOR.accent }, 0.15)
             end)
             holder.MouseButton1Click:Connect(function()
                 if cb then task.spawn(cb) end
@@ -842,7 +780,7 @@ function Maytawin:CreateWindow(props)
                 BackgroundTransparency = 1,
                 Font = Enum.Font.GothamBold,
                 Text = p.name or "Section",
-                TextColor3 = COLOR.accent,
+                TextColor3 = COLOR.accentDark,
                 TextSize = 13,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Parent = holder,
@@ -857,7 +795,6 @@ function Maytawin:CreateWindow(props)
             return {}
         end
 
-        -- Tab select.
         local function selectTab()
             for _, entry in ipairs(tabButtons) do
                 local isActive = entry.name == tabName
@@ -895,7 +832,6 @@ function Maytawin:CreateWindow(props)
         return tab
     end
 
-    -- Notify.
     function window:Notify(p)
         p = p or {}
         local title = p.title or "Notification"
@@ -904,16 +840,15 @@ function Maytawin:CreateWindow(props)
 
         local wrap = create("Frame", {
             Size = UDim2.fromOffset(300, 68),
-            Position = UDim2.new(1, -22, 0, 22),
+            Position = UDim2.new(1, 22, 0, 22),
             AnchorPoint = Vector2.new(1, 0),
-            BackgroundColor3 = COLOR.bg2,
+            BackgroundColor3 = COLOR.bg,
             BorderSizePixel = 0,
             Parent = root,
             ZIndex = 50,
         })
         addCorner(wrap, 10)
-        addStroke(wrap, COLOR.stroke, 1, 0.2)
-        addGradient(wrap, Color3.fromRGB(30, 30, 42), Color3.fromRGB(20, 20, 28), 90)
+        addStroke(wrap, COLOR.strokeHi, 1)
 
         local accentBar = create("Frame", {
             Size = UDim2.new(0, 3, 1, -16),
@@ -923,7 +858,6 @@ function Maytawin:CreateWindow(props)
             Parent = wrap,
         })
         addCorner(accentBar, 2)
-        addGradient(accentBar, COLOR.accent, COLOR.accent2, 90)
 
         create("TextLabel", {
             Size = UDim2.new(1, -30, 0, 20),
@@ -949,13 +883,12 @@ function Maytawin:CreateWindow(props)
             Parent = wrap,
         })
 
-        wrap.Position = UDim2.new(1, 22, 0, 22)
-        tween(wrap, { Position = UDim2.new(1, -22, 0, 22) }, 0.35, Enum.EasingStyle.Back)
+        tween(wrap, { Position = UDim2.new(1, -22, 0, 22) }, 0.32, Enum.EasingStyle.Quart)
 
         task.delay(duration, function()
             if wrap and wrap.Parent then
-                tween(wrap, { Position = UDim2.new(1, 22, 0, 22), BackgroundTransparency = 1 }, 0.3)
-                task.wait(0.32)
+                tween(wrap, { Position = UDim2.new(1, 22, 0, 22) }, 0.28)
+                task.wait(0.3)
                 wrap:Destroy()
             end
         end)
